@@ -1,4 +1,3 @@
-// import { getPrismaClient } from "../../dbClient";
 import { User } from "@prisma/client";
 import { UsersRepository } from "./users.repository";
 
@@ -48,10 +47,10 @@ describe("UsersRepository", () => {
       // assert
       expect(result.name).toEqual(userInput.name);
     });
-    
+
     it("updates user name", async () => {
       // この時点では当然変更されていない
-      expect(testUser.name).toEqual("test")
+      expect(testUser.name).toEqual("test");
       // arrange
       const userInput = {
         id: testUser.id,
@@ -65,6 +64,5 @@ describe("UsersRepository", () => {
       // ここではちゃんと変更されている
       expect(result.name).toEqual(userInput.name);
     });
-
   });
 });
