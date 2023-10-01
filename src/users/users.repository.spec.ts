@@ -1,5 +1,6 @@
 import { User } from "@prisma/client";
 import { UsersRepository } from "./users.repository";
+import { UserFactory } from "../../test/factories/user";
 
 const userRepository = new UsersRepository(jestPrisma.client);
 
@@ -25,13 +26,14 @@ describe("UsersRepository", () => {
   });
 
   describe("updateUser", () => {
-    let testUser: User;
+    let testUser: User
 
     beforeEach(async () => {
-      testUser = await userRepository.createUser({
-        name: "test",
-        email: "test@example.com",
-      });
+      testUser = await UserFactory.create({})
+      // testUser = await userRepository.createUser({
+      //   name: "test",
+      //   email: "test@example.com",
+      // });
     });
 
     it("updates user name", async () => {
