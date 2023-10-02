@@ -2,6 +2,12 @@ import * as ts from "typescript";
 import * as fs from "fs";
 import * as path from "path";
 
+// アッパーキャメルケースをローワーキャメルケースに変換する
+// モデル名はPrismaの命名規則に従ってアッパーキャメルケースの想定
+export const toLowerCamelCase = (str: string) => {
+  return str.charAt(0).toLowerCase() + str.slice(1);
+}
+
 // node_modules 内に生成されている Prisma の型定義を見に行きます。
 const typeDefs = fs.readFileSync(
   "./node_modules/.prisma/client/index.d.ts",
@@ -12,7 +18,7 @@ const typeDefs = fs.readFileSync(
 const modelName = process.argv[process.argv.length - 1];
 
 const outputDir = path.join("test", "factories");
-const outputFilename = path.join(outputDir, `${modelName.toLowerCase()}.ts`);
+const outputFilename = path.join(outputDir, `${toLowerCamelCase(modelName)}.ts`);
 const sourceFile = ts.createSourceFile(
   outputFilename,
   typeDefs,
@@ -43,12 +49,11 @@ function main() {
   findTypeDef(sourceFile, sourceFile);
 
   if (typeStr.length === 0) {
-    console.error("該当のモデルが見つかりませんでしたYO");
+    console.error("該当のモデルが見つかりませんでした");
     return;
   }
 
   // 型定義が見つかったら、そこから プロパティ名: 型の文字列 のマップを作成します
-  // 結構ゴリ押しで作成しているのでもっとスマートな方法あったら知りたい
   const typeMap = convertTypeStringToMap(typeStr);
 
   // 作成したマップを元に Factory 関数のファイルの文字列を作成します。
@@ -101,19 +106,37 @@ function dummyDataStringByType(typeStr: string) {
 
 // Factory ファイルの文字列を生成する関数です。
 function generateFactoryFileString(typeMap: EntityMap) {
+  const lowerCamelName = toLowerCamelCase(modelName);
   return `import { faker } from "@faker-js/faker";
-import { createFactory } from ".";
-import { Prisma, ${modelName} } from "@prisma/client";
+import { Prisma, ${modelName}, PrismaClient } from "@prisma/client";
 
-export const ${modelName}DefaultAttributes: Prisma.${modelName}CreateInput = {
+// 関連テーブルがある場合は親テーブル側のDefaultAttributesをimportして利用できます
+export const ${lowerCamelName}DefaultAttributes: Prisma.${modelName}CreateInput = {
   ${typeMap
     .map((val) => `${val.key}: ${dummyDataStringByType(val.type)}`)
     .join(",\n  ")}
 };
 
-export const ${modelName}Factory = createFactory<
-  Prisma.${modelName}CreateInput,
-  ${modelName}
->("${modelName}", ${modelName}DefaultAttributes);
+// こちらを参考にFactoryクラスを作成してください
+// ある程度自由にカスタマイズして構いません
+export class ${modelName}Factory {
+  private readonly prisma: PrismaClient;
+
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
+  }
+
+  public async create(attributes: 
+    Partial<Prisma.${modelName}CreateInput> = {}
+  ): Promise<${modelName}> {
+    return await this.prisma.${lowerCamelName}.create({
+      data: {
+        ...${lowerCamelName}DefaultAttributes,
+        ...attributes,
+      },
+    });
+  }
+
+}
 `;
 }

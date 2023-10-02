@@ -3,6 +3,7 @@ import { UsersRepository } from "./users.repository";
 import { UserFactory } from "../../test/factories/user";
 
 const userRepository = new UsersRepository(jestPrisma.client);
+const userFactory = new UserFactory(jestPrisma.client);
 
 describe("UsersRepository", () => {
   describe("createUser", () => {
@@ -29,11 +30,7 @@ describe("UsersRepository", () => {
     let testUser: User
 
     beforeEach(async () => {
-      testUser = await UserFactory.create({})
-      // testUser = await userRepository.createUser({
-      //   name: "test",
-      //   email: "test@example.com",
-      // });
+      testUser = await userFactory.create({})
     });
 
     it("updates user name", async () => {
@@ -51,11 +48,10 @@ describe("UsersRepository", () => {
     });
 
     it("updates user name", async () => {
-      // この時点では当然変更されていない
-      expect(testUser.name).toEqual("test");
       // arrange
+      const targetUser = await userFactory.create({email: "test@example.com"})
       const userInput = {
-        id: testUser.id,
+        id: targetUser.id,
         name: "changed2",
       };
 
@@ -63,7 +59,6 @@ describe("UsersRepository", () => {
       const result = await userRepository.updateuser(userInput);
 
       // assert
-      // ここではちゃんと変更されている
       expect(result.name).toEqual(userInput.name);
     });
   });

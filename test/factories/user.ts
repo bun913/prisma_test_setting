@@ -1,15 +1,29 @@
 import { faker } from "@faker-js/faker";
-import { createFactory } from ".";
-import { Prisma, PrismaClient, User } from "@prisma/client";
+import { Prisma, User, PrismaClient } from "@prisma/client";
 
-export const UserDefaultAttributes: Prisma.UserCreateInput = {
+// 関連テーブルがある場合は親テーブル側のDefaultAttributesをimportして利用できます
+export const userDefaultAttributes: Prisma.UserCreateInput = {
   email: faker.internet.email(),
-  name: faker.person.fullName()
+  name: faker.person.lastName()
 };
 
-// TODO: ここの改良から始める
-export const UserFactory = async (prisma: PrismaClient, attrubutes: Partial<Prisma.UserCreateInput>) => {
-  return await prisma.user.create({
-    data: UserDefaultAttributes
-  })
+// こちらを参考にFactoryクラスを作成してください
+// ある程度自由にカスタマイズして構いません
+export class UserFactory {
+  private readonly prisma: PrismaClient;
+
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
+  }
+
+  public async create(attributes: 
+    Partial<Prisma.UserCreateInput> = {}
+  ): Promise<User> {
+    return await this.prisma.user.create({
+      data: {
+        ...userDefaultAttributes,
+        ...attributes,
+      },
+    });
+  }
 }
